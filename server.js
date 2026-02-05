@@ -1,6 +1,5 @@
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-const axios = require('axios');
 
 process.on('uncaughtException', (err) => {
   console.log(err.name, err.message);
@@ -11,10 +10,8 @@ process.on('uncaughtException', (err) => {
 dotenv.config({ path: `${__dirname}/config.env` });
 const app = require('./app');
 
-const DB = process.env.MONGO_URI.replace(
-  '<PASSWORD>',
-  process.env.MONGO_PASSWORD,
-);
+const DB = process.env.MONGO_URI.replace('<PASSWORD>', process.env.MONGO_PASS);
+console.log(DB);
 
 //const DB = process.env.DATABAS_LOCAL;
 mongoose.connect(DB).then(() => {
