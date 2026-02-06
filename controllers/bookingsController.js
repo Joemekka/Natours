@@ -73,6 +73,7 @@ exports.webhookCheckout = (req, res, next) => {
   if (event.type === 'checkout-session-complete') {
     createBookingCheckout(event.data.object);
   }
+  res.status(200).json({ revieved: true });
 };
 
 exports.createBooking = factory.createOne(Booking);
