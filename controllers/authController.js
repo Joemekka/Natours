@@ -14,18 +14,16 @@ const signToken = (id) => {
   return checkToken;
 };
 
-const createAndSendToken = (user, statusCode, res) => {
+const createAndSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id);
-
-  const cookieOptions = {
+  // Heroku specific
+  res.cookie('jwt', token, {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRY * 24 * 60 * 60 * 1000,
     ),
     httpOnly: true,
-  };
-
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-  res.cookie('jwt', token, cookieOptions);
+    secure: req.secure || req.headers('x-forwarded-proto') === 'https',
+  });
 
   // Remove password from output
   user.password = undefined;
@@ -54,7 +52,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   // console.log(url);
 
   await new Email(newUser, url).sendWelcome();
-  createAndSendToken(newUser, 201, res);
+  createAndSendToken(newUser, 201, req, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -73,7 +71,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // If everything is okay, send token to client
-  createAndSendToken(user, 200, res);
+  createAndSendToken(user, 200, req, res);
 });
 // Get token and check if it exists
 
@@ -256,5 +254,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   // Log user in, send JWT
-  createAndSendToken(user._id, 200, res);
+  createAndSendToken(user._id, 200, req, res);
 });
