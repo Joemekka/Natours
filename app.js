@@ -96,11 +96,14 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
+// Stripe webhook — MUST come BEFORE express.json()
+app.post(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }),
+  bookingController.webhookCheckout,
+);
+
 // Body parser, reading data from body into req.body
-
-express.raw({ type: 'Application/json' });
-app.use('/webhook-checkout', bookingController.webhookCheckout);
-
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
