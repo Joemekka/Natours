@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cors = require('cors');
 const compression = require('compression');
 const tourRouter = require('./routes/tourRoute');
 const userRouter = require('./routes/userRoute');
@@ -15,6 +16,7 @@ const boookingRouter = require('./routes/bookingRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const viewRouter = require('./routes/viewRoutes');
+const bookingController = require('./controllers/bookingsController');
 
 const app = express();
 
@@ -28,6 +30,14 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Serving static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware to allow all cross origin
+app.use(cors());
+
+// For specific cross origin
+// app.options(cors({
+//   origin: 'www.example.com'
+// }))
 
 //app.use(helmet());
 
@@ -87,6 +97,10 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
+
+express.raw({ type: 'Application/json' });
+app.use('/webhook-checkout', bookingController.webhookCheckout);
+
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
