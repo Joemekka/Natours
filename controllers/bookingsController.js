@@ -54,59 +54,11 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
 //   res.redirect(req.originalUrl.split('?')[0]);
 // });
 
-// Idempotent: Preventing duble order in single payment
-
-const handleCheckoutSession = async (session) => {
-  const existingBooking = await Booking.findOne({
-    stripeSessionId: session.id,
-  });
-
-  // Idempotency guard
-  if (existingBooking) {
-    console.log('Booking already exists, skipping...');
-    return;
-  }
-
-  const booking = await Booking.create({
-    tour: session.client_reference_id,
-    email: session.customer_email,
-    price: session.amount_total / 100,
-    stripeSessionId: session.id,
-    paymentIntentId: session.payment_intent,
-  });
-
-  console.log('Booking created:', booking._id);
-};
-
 const createBookingCheckout = async (session) => {
-  try {
-    console.log('Webhook session received:', session.id);
-
-    const tour = session.client_reference_id;
-
-    const user = await User.findOne({
-      email: session.customer_email,
-    });
-
-    if (!user) {
-      console.error('❌ User not found:', session.customer_email);
-      return;
-    }
-
-    const price = session.amount_total / 100;
-
-    const booking = await Booking.create({
-      tour,
-      user: user._id,
-      price,
-      stripeSessionId: session.id,
-      paymentIntentId: session.payment_intent,
-    });
-
-    console.log('✅ Booking created:', booking._id);
-  } catch (err) {
-    console.error('❌ Booking creation failed:', err);
-  }
+  const tour = session.client_reference_id;
+  const user = (await User.findOne({ email: session.customer_email })).id;
+  const price = session.display_items[0].unit_amount / 100;
+  await Booking.create({ tour, user, price });
 };
 
 exports.webhookCheckout = (req, res, next) => {
@@ -118,7 +70,6 @@ exports.webhookCheckout = (req, res, next) => {
       signature,
       process.env.STRIPE_WEBHOOK_KEY,
     );
-    console.log('Webhook received:', event.type);
   } catch (error) {
     return res.status(400).send(`Webhook error: ${error.message}`);
   }
